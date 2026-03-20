@@ -2,74 +2,27 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Sector Real-time Monitor</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>KOR Sector Monitor</title>
     <style>
-        body { background-color: #191919; color: #e5e7eb; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
-        .content-area { height: calc(100vh - 70px); width: 100%; border-top: 1px solid #333; }
-        iframe { width: 100%; height: 100%; border: none; }
+        body, html { margin: 0; padding: 0; height: 100%; background-color: #131722; overflow: hidden; }
+        .tradingview-widget-container { height: 100vh; width: 100%; }
     </style>
 </head>
-<body class="flex flex-col">
-
-    <!-- 상단 컨트롤 탭 -->
-    <div class="flex items-center justify-between p-4">
-        <div class="flex gap-3">
-            <button onclick="showKOR()" id="btn-KOR" class="px-6 py-2 rounded-lg font-bold text-sm bg-red-600 text-white shadow-lg transition-all">🇰🇷 한국 업종별 지수 (실시간)</button>
-            <button onclick="showUSA()" id="btn-USA" class="px-6 py-2 rounded-lg font-bold text-sm bg-gray-800 text-gray-400 hover:text-white transition-all">🇺🇸 미국 섹터 히트맵</button>
-        </div>
-        <div class="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
-            Source: Investing.com / TradingView
-        </div>
+<body>
+    <div class="tradingview-widget-container">
+        <div id="tradingview_screener"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
+        {
+          "width": "100%",
+          "height": "100%",
+          "defaultColumn": "overview",
+          "defaultScreen": "most_capitalized",
+          "market": "korea",
+          "showToolbar": true,
+          "colorTheme": "dark",
+          "locale": "ko"
+        }
+        </script>
     </div>
-
-    <!-- 데이터 출력 영역 -->
-    <div id="display-area" class="content-area">
-        <!-- 위젯이 여기에 직접 삽입됩니다 -->
-    </div>
-
-    <script>
-        const displayArea = document.getElementById('display-area');
-
-        // 1. 한국 섹터 (Investing.com 실시간 업종 지수 위젯)
-        // 하드코딩 없이 한국의 반도체, 금융, 화학 등 업종 지수 전체를 불러옵니다.
-        function showKOR() {
-            updateButton('KOR');
-            displayArea.innerHTML = `
-                <iframe src="https://kr.widgets.investing.com/top-stocks?theme=darkTheme&pairs=44358,44359,44360,44361,44362,44363,44364,44365,44366,44367" 
-                width="100%" height="100%" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
-            `;
-        }
-
-        // 2. 미국 섹터 (TradingView Heatmap - 미국 데이터는 차단 안됨)
-        function showUSA() {
-            updateButton('USA');
-            displayArea.innerHTML = ''; // 초기화 후 스크립트 삽입
-            const script = document.createElement('script');
-            script.src = "https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js";
-            script.async = true;
-            script.innerHTML = JSON.stringify({
-                "indexFilter": "S&P500",
-                "hasTopBar": true,
-                "isDatasetEnabled": true,
-                "width": "100%",
-                "height": "100%",
-                "colorTheme": "dark",
-                "locale": "en",
-                "colors": ["#ef4444", "#1e222d", "#10b981"]
-            });
-            displayArea.appendChild(script);
-        }
-
-        function updateButton(market) {
-            const isKOR = market === 'KOR';
-            document.getElementById('btn-KOR').className = isKOR ? "px-6 py-2 rounded-lg font-bold text-sm bg-red-600 text-white shadow-lg" : "px-6 py-2 rounded-lg font-bold text-sm bg-gray-800 text-gray-400";
-            document.getElementById('btn-USA').className = !isKOR ? "px-6 py-2 rounded-lg font-bold text-sm bg-green-600 text-white shadow-lg" : "px-6 py-2 rounded-lg font-bold text-sm bg-gray-800 text-gray-400";
-        }
-
-        // 페이지 로드 시 한국 데이터 먼저 출력
-        showKOR();
-    </script>
 </body>
 </html>
