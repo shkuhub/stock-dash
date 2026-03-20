@@ -1,68 +1,146 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>글로벌 섹터 대시보드</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #191919; color: #e5e7eb; margin: 0; padding: 0; overflow: hidden; }
-        .widget-container { height: calc(100 py - 80px); }
-        /* 노션 임베드 시 스크롤바 방지 */
-        iframe { border: none !important; }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>실시간 글로벌 섹터 터미널</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body{background:#131722;color:#d1d4dc;margin:0;padding:10px;font-family:sans-serif}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--ac);box-shadow:0 0 6px var(--ac);animation:blink 2s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+  .tv{width:100%;height:100%}
+</style>
 </head>
 <body>
 
-<div class="p-4 h-screen flex flex-col">
-    <!-- 상단 탭 -->
-    <div class="flex gap-2 mb-4">
-        <button onclick="changeMarket('KR')" id="btn-KR" class="px-6 py-2 rounded-full font-bold bg-red-600 text-white shadow-lg transition-all">🇰🇷 한국 섹터</button>
-        <button onclick="changeMarket('US')" id="btn-US" class="px-6 py-2 rounded-full font-bold bg-gray-800 text-gray-400 hover:bg-gray-700 transition-all">🇺🇸 미국 섹터</button>
-    </div>
+<!-- 상단 컨트롤 -->
+<div class="flex items-center justify-between mb-3 px-1">
+  <div class="flex gap-2">
+    <button onclick="loadMarket('KR')" id="btn-KR"
+      class="px-5 py-2 rounded font-bold text-sm transition-all bg-blue-600 text-white shadow-lg">
+      🇰🇷 한국 섹터
+    </button>
+    <button onclick="loadMarket('US')" id="btn-US"
+      class="px-5 py-2 rounded font-bold text-sm transition-all bg-[#2a2e39] text-gray-400">
+      🇺🇸 미국 섹터
+    </button>
+  </div>
+  <div class="flex items-center gap-2">
+    <div class="dot" id="liveDot" style="--ac:#3b82f6"></div>
+    <span class="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Real-time Sector Scanner</span>
+  </div>
+</div>
 
-    <!-- 위젯이 들어갈 자리 -->
-    <div id="tradingview-widget" class="flex-1 rounded-xl overflow-hidden border border-gray-800">
-        <!-- 위젯 스크립트가 여기에 삽입됩니다 -->
-    </div>
+<!-- 히트맵 -->
+<div class="rounded-lg overflow-hidden border border-[#2a2e39] mb-3" style="height:calc(62vh - 40px)">
+  <div class="flex items-center gap-2 px-3 py-2 bg-[#1a1d2e] border-b border-[#2a2e39]">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" stroke-linecap="round">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+    </svg>
+    <span id="hm-label" class="text-[10px] font-bold tracking-widest text-gray-500">SECTOR HEATMAP · KOSPI</span>
+    <div class="dot ml-auto" id="hmDot" style="--ac:#3b82f6"></div>
+  </div>
+  <div style="height:calc(100% - 33px)"><div id="hm" class="tv"></div></div>
+</div>
+
+<!-- 타임라인 -->
+<div class="rounded-lg overflow-hidden border border-[#2a2e39]" style="height:calc(38vh - 40px)">
+  <div class="flex items-center gap-2 px-3 py-2 bg-[#1a1d2e] border-b border-[#2a2e39]">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" stroke-linecap="round">
+      <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"/>
+      <path d="M4 11h8M4 7h4M4 15h8M4 19h4"/>
+    </svg>
+    <span id="tl-label" class="text-[10px] font-bold tracking-widest text-gray-500">시장 타임라인 · 실시간 뉴스</span>
+    <div class="dot ml-auto" id="tlDot" style="--ac:#3b82f6"></div>
+  </div>
+  <div style="height:calc(100% - 33px)"><div id="tl" class="tv"></div></div>
 </div>
 
 <script>
-    function loadWidget(market) {
-        const container = document.getElementById('tradingview-widget');
-        container.innerHTML = ''; // 이전 위젯 삭제
-
-        const script = document.createElement('script');
-        script.src = "https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js";
-        script.async = true;
-        
-        // 시장별 설정값
-        const config = market === 'KR' ? {
-            "indexFilter": "KOSPI",
-            "colors": ["#3b82f6", "#1e222d", "#ef4444"], // 한국: 파랑(하락)-빨강(상승)
-            "hasTopBar": true, "isDatasetEnabled": true, "width": "100%", "height": "100%", "locale": "ko", "colorTheme": "dark"
-        } : {
-            "indexFilter": "S&P500",
-            "colors": ["#ef4444", "#1e222d", "#10b981"], // 미국: 빨강(하락)-초록(상승)
-            "hasTopBar": true, "isDatasetEnabled": true, "width": "100%", "height": "100%", "locale": "en", "colorTheme": "dark"
-        };
-
-        script.innerHTML = JSON.stringify(config);
-        container.appendChild(script);
+var M = {
+  KR: {
+    ac: '#3b82f6',
+    hmLabel: 'SECTOR HEATMAP · KOSPI',
+    tlLabel: '시장 타임라인 · 실시간 뉴스',
+    hm: {
+      dataSource:'KOSPI', exchanges:[], grouping:'sector',
+      blockSize:'market_cap_basic', blockColor:'change',
+      locale:'kr', colorTheme:'dark', hasTopBar:false,
+      isDataSetEnabled:false, isZoomEnabled:true,
+      hasSymbolTooltip:true, isMonoSize:false,
+      width:'100%', height:'100%'
+    },
+    tl: {
+      feedMode:'market', market:'stock', colorTheme:'dark',
+      isTransparent:true, displayMode:'adaptive',
+      width:'100%', height:'100%', locale:'kr'
     }
-
-    function changeMarket(market) {
-        // 버튼 스타일 변경
-        const isKR = market === 'KR';
-        document.getElementById('btn-KR').className = isKR ? "px-6 py-2 rounded-full font-bold bg-red-600 text-white shadow-lg" : "px-6 py-2 rounded-full font-bold bg-gray-800 text-gray-400";
-        document.getElementById('btn-US').className = !isKR ? "px-6 py-2 rounded-full font-bold bg-green-600 text-white shadow-lg" : "px-6 py-2 rounded-full font-bold bg-gray-800 text-gray-400";
-        
-        loadWidget(market);
+  },
+  US: {
+    ac: '#22c55e',
+    hmLabel: 'SECTOR HEATMAP · S&P 500',
+    tlLabel: 'MARKET TIMELINE · LIVE NEWS',
+    hm: {
+      dataSource:'SPX500', exchanges:[], grouping:'sector',
+      blockSize:'market_cap_basic', blockColor:'change',
+      locale:'en', colorTheme:'dark', hasTopBar:false,
+      isDataSetEnabled:false, isZoomEnabled:true,
+      hasSymbolTooltip:true, isMonoSize:false,
+      width:'100%', height:'100%'
+    },
+    tl: {
+      feedMode:'market', market:'stock', colorTheme:'dark',
+      isTransparent:true, displayMode:'adaptive',
+      width:'100%', height:'100%', locale:'en'
     }
+  }
+};
 
-    // 초기 실행 (한국 시장)
-    loadWidget('KR');
+var cur = null;
+
+function inject(id, src, cfg) {
+  var el = document.getElementById(id);
+  el.innerHTML = '';
+  var w = document.createElement('div');
+  w.style.cssText = 'width:100%;height:100%';
+  el.appendChild(w);
+  var s = document.createElement('script');
+  s.type = 'text/javascript'; s.async = true; s.src = src;
+  s.innerHTML = JSON.stringify(cfg);
+  el.appendChild(s);
+}
+
+function loadMarket(k) {
+  if (k === cur) return;
+  cur = k;
+  var m = M[k];
+
+  /* 라이브 닷 색상 */
+  ['liveDot','hmDot','tlDot'].forEach(function(id){
+    document.getElementById(id).style.setProperty('--ac', m.ac);
+  });
+
+  /* 레이블 */
+  document.getElementById('hm-label').textContent = m.hmLabel;
+  document.getElementById('tl-label').textContent = m.tlLabel;
+
+  /* 버튼 */
+  var isKR = k === 'KR';
+  document.getElementById('btn-KR').className =
+    'px-5 py-2 rounded font-bold text-sm transition-all ' +
+    (isKR ? 'bg-blue-600 text-white shadow-lg' : 'bg-[#2a2e39] text-gray-400');
+  document.getElementById('btn-US').className =
+    'px-5 py-2 rounded font-bold text-sm transition-all ' +
+    (!isKR ? 'bg-green-600 text-white shadow-lg' : 'bg-[#2a2e39] text-gray-400');
+
+  /* 위젯 교체 */
+  inject('hm', 'https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js', m.hm);
+  inject('tl', 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js', m.tl);
+}
+
+loadMarket('KR');
 </script>
-
 </body>
 </html>
