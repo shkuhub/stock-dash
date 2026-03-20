@@ -3,72 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Sector Terminal</title>
+    <title>Global Sector Real-time Monitor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #131722; color: #d1d4dc; margin: 0; padding: 0; overflow: hidden; }
-        .nav-btn { transition: all 0.2s; border-radius: 4px; font-weight: 700; font-size: 13px; }
+        body { background-color: #191919; color: #e5e7eb; margin: 0; padding: 0; overflow: hidden; height: 100vh; }
+        .content-area { height: calc(100vh - 70px); width: 100%; border-top: 1px solid #333; }
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
-<body class="h-screen flex flex-col p-3">
+<body class="flex flex-col">
 
-    <!-- 상단 헤더 및 컨트롤러 -->
-    <div class="flex justify-between items-center mb-3 px-1">
-        <div class="flex gap-2">
-            <button onclick="loadHeatmap('KR')" id="btn-KR" class="nav-btn px-4 py-2 bg-blue-600 text-white shadow-lg">🇰🇷 KOREA SECTORS</button>
-            <button onclick="loadHeatmap('US')" id="btn-US" class="nav-btn px-4 py-2 bg-[#2a2e39] text-gray-400 hover:text-white">🇺🇸 USA SECTORS</button>
+    <!-- 상단 컨트롤 탭 -->
+    <div class="flex items-center justify-between p-4">
+        <div class="flex gap-3">
+            <button onclick="showKOR()" id="btn-KOR" class="px-6 py-2 rounded-lg font-bold text-sm bg-red-600 text-white shadow-lg transition-all">🇰🇷 한국 업종별 지수 (실시간)</button>
+            <button onclick="showUSA()" id="btn-USA" class="px-6 py-2 rounded-lg font-bold text-sm bg-gray-800 text-gray-400 hover:text-white transition-all">🇺🇸 미국 섹터 히트맵</button>
         </div>
-        <div class="text-right">
-            <div id="update-time" class="text-[10px] text-gray-500 font-mono uppercase">Syncing...</div>
-            <div class="text-[9px] text-blue-500 font-bold uppercase tracking-widest">Source: KRX / TradingView</div>
+        <div class="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+            Source: Investing.com / TradingView
         </div>
     </div>
 
-    <!-- 히트맵 위젯 영역 -->
-    <div id="heatmap-container" class="flex-1 bg-[#1e222d] rounded-lg border border-[#2a2e39] overflow-hidden">
-        <!-- 위젯 자동 삽입 -->
+    <!-- 데이터 출력 영역 -->
+    <div id="display-area" class="content-area">
+        <!-- 위젯이 여기에 직접 삽입됩니다 -->
     </div>
 
     <script>
-        function loadHeatmap(market) {
-            const container = document.getElementById('heatmap-container');
-            container.innerHTML = ''; // 기존 위젯 삭제
+        const displayArea = document.getElementById('display-area');
 
+        // 1. 한국 섹터 (Investing.com 실시간 업종 지수 위젯)
+        // 하드코딩 없이 한국의 반도체, 금융, 화학 등 업종 지수 전체를 불러옵니다.
+        function showKOR() {
+            updateButton('KOR');
+            displayArea.innerHTML = `
+                <iframe src="https://kr.widgets.investing.com/top-stocks?theme=darkTheme&pairs=44358,44359,44360,44361,44362,44363,44364,44365,44366,44367" 
+                width="100%" height="100%" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
+            `;
+        }
+
+        // 2. 미국 섹터 (TradingView Heatmap - 미국 데이터는 차단 안됨)
+        function showUSA() {
+            updateButton('USA');
+            displayArea.innerHTML = ''; // 초기화 후 스크립트 삽입
             const script = document.createElement('script');
             script.src = "https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js";
             script.async = true;
-
-            // 핵심: indexFilter 대신 국가별 전체 주식(KOREA/AMERICA) 필터 사용
-            const config = market === 'KR' ? {
-                "indexFilter": "", 
-                "country": "KR", // 한국 전체 주식 대상
-                "colors": ["#3b82f6", "#1e222d", "#ef4444"], // 한국식 파랑-빨강
-                "hasTopBar": true,
-                "isDatasetEnabled": true, // 섹터별 그룹화 강제 활성화
-                "defaultSymbolId": "KRX:KOSPI",
-                "width": "100%", "height": "100%", "locale": "ko", "colorTheme": "dark"
-            } : {
-                "indexFilter": "S&P500", // 미국은 S&P500이 가장 정확함
-                "colors": ["#ef4444", "#1e222d", "#10b981"], // 미국식 빨강-초록
+            script.innerHTML = JSON.stringify({
+                "indexFilter": "S&P500",
                 "hasTopBar": true,
                 "isDatasetEnabled": true,
-                "defaultSymbolId": "NASDAQ:QQQ",
-                "width": "100%", "height": "100%", "locale": "en", "colorTheme": "dark"
-            };
-
-            script.innerHTML = JSON.stringify(config);
-            container.appendChild(script);
-
-            // UI 업데이트
-            document.getElementById('update-time').innerText = "Last Update: " + new Date().toLocaleTimeString();
-            
-            const isKR = market === 'KR';
-            document.getElementById('btn-KR').className = isKR ? "nav-btn px-4 py-2 bg-blue-600 text-white shadow-lg" : "nav-btn px-4 py-2 bg-[#2a2e39] text-gray-400";
-            document.getElementById('btn-US').className = !isKR ? "nav-btn px-4 py-2 bg-green-600 text-white shadow-lg" : "nav-btn px-4 py-2 bg-[#2a2e39] text-gray-400";
+                "width": "100%",
+                "height": "100%",
+                "colorTheme": "dark",
+                "locale": "en",
+                "colors": ["#ef4444", "#1e222d", "#10b981"]
+            });
+            displayArea.appendChild(script);
         }
 
-        // 초기 실행
-        loadHeatmap('KR');
+        function updateButton(market) {
+            const isKOR = market === 'KOR';
+            document.getElementById('btn-KOR').className = isKOR ? "px-6 py-2 rounded-lg font-bold text-sm bg-red-600 text-white shadow-lg" : "px-6 py-2 rounded-lg font-bold text-sm bg-gray-800 text-gray-400";
+            document.getElementById('btn-USA').className = !isKOR ? "px-6 py-2 rounded-lg font-bold text-sm bg-green-600 text-white shadow-lg" : "px-6 py-2 rounded-lg font-bold text-sm bg-gray-800 text-gray-400";
+        }
+
+        // 페이지 로드 시 한국 데이터 먼저 출력
+        showKOR();
     </script>
 </body>
 </html>
