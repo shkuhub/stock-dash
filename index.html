@@ -1,151 +1,68 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>글로벌 섹터 대시보드</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{
-  background:#ffffff;
-  font-family:'SF Mono','Fira Code',monospace;
-  color:#333;
-  height:100%;
-  overflow-x:hidden;
-}
-.header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;
-  background:#ffffff;
-  border-bottom:1px solid #e5e5e5;
-  position:sticky;top:0;z-index:50;
-}
-.logo{font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--ac,#00c795)}
-.tabs{display:flex;gap:4px;background:#f0f0f0;border:1px solid #ddd;border-radius:7px;padding:3px}
-.tab{
-  padding:5px 20px;font-family:inherit;font-size:11px;font-weight:700;
-  letter-spacing:.14em;cursor:pointer;border:none;border-radius:5px;
-  background:transparent;color:#888;transition:all .22s ease;
-}
-.tab.on{background:var(--ac,#00c795);color:#111;box-shadow:0 0 12px color-mix(in srgb,var(--ac,#00c795) 55%,transparent)}
-.sec{margin:10px 10px 0;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden}
-.sec-head{
-  display:flex;align-items:center;gap:6px;
-  padding:7px 12px;background:#f5f5f5;border-bottom:1px solid #e5e5e5;
-  font-size:10px;font-weight:700;letter-spacing:.15em;color:#555;
-}
-.dot{
-  margin-left:auto;width:6px;height:6px;border-radius:50%;
-  background:var(--ac,#00c795);box-shadow:0 0 6px var(--ac,#00c795);
-  animation:blink 2s ease-in-out infinite;
-}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.hm-wrap{width:100%;height:clamp(400px,60vh,660px)}
-.tl-wrap{width:100%;height:clamp(300px,32vh,440px)}
-.hm-wrap .tv,.tl-wrap .tv{width:100%;height:100%}
-.foot{height:10px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글로벌 섹터 대시보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #191919; color: #e5e7eb; margin: 0; padding: 0; overflow: hidden; }
+        .widget-container { height: calc(100 py - 80px); }
+        /* 노션 임베드 시 스크롤바 방지 */
+        iframe { border: none !important; }
+    </style>
 </head>
 <body>
 
-<div class="header">
-  <span class="logo">▣ SECTOR TERMINAL</span>
-  <div class="tabs">
-    <button class="tab" id="t-KOR" onclick="sw('KOR')">KOR</button>
-    <button class="tab on"  id="t-USA" onclick="sw('USA')">USA</button>
-  </div>
-</div>
+<div class="p-4 h-screen flex flex-col">
+    <!-- 상단 탭 -->
+    <div class="flex gap-2 mb-4">
+        <button onclick="changeMarket('KR')" id="btn-KR" class="px-6 py-2 rounded-full font-bold bg-red-600 text-white shadow-lg transition-all">🇰🇷 한국 섹터</button>
+        <button onclick="changeMarket('US')" id="btn-US" class="px-6 py-2 rounded-full font-bold bg-gray-800 text-gray-400 hover:bg-gray-700 transition-all">🇺🇸 미국 섹터</button>
+    </div>
 
-<div class="sec">
-  <div class="sec-head">
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-         stroke="var(--ac,#00c795)" stroke-width="2.5" stroke-linecap="round">
-      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-    </svg>
-    <span id="hm-title">SECTOR HEATMAP · S&amp;P 500</span>
-    <span class="dot"></span>
-  </div>
-  <div class="hm-wrap"><div id="hm" class="tv"></div></div>
+    <!-- 위젯이 들어갈 자리 -->
+    <div id="tradingview-widget" class="flex-1 rounded-xl overflow-hidden border border-gray-800">
+        <!-- 위젯 스크립트가 여기에 삽입됩니다 -->
+    </div>
 </div>
-
-<div class="sec">
-  <div class="sec-head">
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-         stroke="var(--ac,#00c795)" stroke-width="2.5" stroke-linecap="round">
-      <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"/>
-      <path d="M4 11h8M4 7h4M4 15h8M4 19h4"/>
-    </svg>
-    <span id="tl-title">MARKET TIMELINE · LIVE NEWS</span>
-    <span class="dot"></span>
-  </div>
-  <div class="tl-wrap"><div id="tl" class="tv"></div></div>
-</div>
-
-<div class="foot"></div>
 
 <script>
-var M={
-  KOR:{
-    ac:'#FF4B6E',
-    hmTitle:'SECTOR HEATMAP · KOSPI',
-    tlTitle:'시장 타임라인 · 실시간 뉴스',
-    hm:{dataSource:'KOSPI',exchanges:[],grouping:'sector',
-        blockSize:'market_cap_basic',blockColor:'change',
-        locale:'kr',colorTheme:'dark',hasTopBar:false,
-        isDataSetEnabled:false,isZoomEnabled:true,
-        hasSymbolTooltip:true,isMonoSize:false,width:'100%',height:'100%'},
-    tl:{feedMode:'market',market:'stock',colorTheme:'dark',
-        isTransparent:true,displayMode:'adaptive',
-        width:'100%',height:'100%',locale:'kr'}
-  },
-  USA:{
-    ac:'#00C795',
-    hmTitle:'SECTOR HEATMAP · S&P 500',
-    tlTitle:'MARKET TIMELINE · LIVE NEWS',
-    hm:{dataSource:'SPX500',exchanges:[],grouping:'sector',
-        blockSize:'market_cap_basic',blockColor:'change',
-        locale:'en',colorTheme:'dark',hasTopBar:false,
-        isDataSetEnabled:false,isZoomEnabled:true,
-        hasSymbolTooltip:true,isMonoSize:false,width:'100%',height:'100%'},
-    tl:{feedMode:'market',market:'stock',colorTheme:'dark',
-        isTransparent:true,displayMode:'adaptive',
-        width:'100%',height:'100%',locale:'en'}
-  }
-};
+    function loadWidget(market) {
+        const container = document.getElementById('tradingview-widget');
+        container.innerHTML = ''; // 이전 위젯 삭제
 
-var cur='USA';
+        const script = document.createElement('script');
+        script.src = "https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js";
+        script.async = true;
+        
+        // 시장별 설정값
+        const config = market === 'KR' ? {
+            "indexFilter": "KOSPI",
+            "colors": ["#3b82f6", "#1e222d", "#ef4444"], // 한국: 파랑(하락)-빨강(상승)
+            "hasTopBar": true, "isDatasetEnabled": true, "width": "100%", "height": "100%", "locale": "ko", "colorTheme": "dark"
+        } : {
+            "indexFilter": "S&P500",
+            "colors": ["#ef4444", "#1e222d", "#10b981"], // 미국: 빨강(하락)-초록(상승)
+            "hasTopBar": true, "isDatasetEnabled": true, "width": "100%", "height": "100%", "locale": "en", "colorTheme": "dark"
+        };
 
-function inject(id,src,cfg){
-  var el=document.getElementById(id);
-  el.innerHTML='';
-  var w=document.createElement('div');
-  w.style.cssText='width:100%;height:100%';
-  el.appendChild(w);
-  var s=document.createElement('script');
-  s.type='text/javascript';s.async=true;s.src=src;
-  s.innerHTML=JSON.stringify(cfg);
-  el.appendChild(s);
-}
+        script.innerHTML = JSON.stringify(config);
+        container.appendChild(script);
+    }
 
-function sw(k){
-  if(k===cur)return;
-  cur=k;
-  var m=M[k];
-  document.documentElement.style.setProperty('--ac',m.ac);
-  document.getElementById('hm-title').textContent=m.hmTitle;
-  document.getElementById('tl-title').textContent=m.tlTitle;
-  document.getElementById('t-KOR').className='tab'+(k==='KOR'?' on':'');
-  document.getElementById('t-USA').className='tab'+(k==='USA'?' on':'');
-  inject('hm','https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js',m.hm);
-  inject('tl','https://s3.tradingview.com/external-embedding/embed-widget-timeline.js',m.tl);
-}
+    function changeMarket(market) {
+        // 버튼 스타일 변경
+        const isKR = market === 'KR';
+        document.getElementById('btn-KR').className = isKR ? "px-6 py-2 rounded-full font-bold bg-red-600 text-white shadow-lg" : "px-6 py-2 rounded-full font-bold bg-gray-800 text-gray-400";
+        document.getElementById('btn-US').className = !isKR ? "px-6 py-2 rounded-full font-bold bg-green-600 text-white shadow-lg" : "px-6 py-2 rounded-full font-bold bg-gray-800 text-gray-400";
+        
+        loadWidget(market);
+    }
 
-(function(){
-  document.documentElement.style.setProperty('--ac',M[cur].ac);
-  inject('hm','https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js',M[cur].hm);
-  inject('tl','https://s3.tradingview.com/external-embedding/embed-widget-timeline.js',M[cur].tl);
-})();
+    // 초기 실행 (한국 시장)
+    loadWidget('KR');
 </script>
+
 </body>
 </html>
